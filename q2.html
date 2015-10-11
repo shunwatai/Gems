@@ -1,0 +1,368 @@
+<html>
+	<head>
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+	<title>comp3421 assignment1 question2 Gems</title>
+	
+	<style>
+		table, th, td {            
+			table-layout: fixed;
+			border: 1px solid black;
+			border-collapse: collapse;
+		}        
+				
+		td img{            
+			width:50px; height:50px;
+		}
+		
+		.drag{            
+			width:52px; 
+            height:52px;
+            left: 1px;
+            top: 1px;
+            overflow:auto;
+		}
+        
+        #button{
+            width:500px; 
+            height:30px;
+            top: 1px;
+            left: 1px;
+        }
+        
+        #score{
+            width:100px; 
+            top: 1px;
+            left: 1px;
+        }
+        
+        #timer{
+            width:100px;   
+            top: 1px;
+            left: 1px;         
+        }
+		
+	</style>
+		
+    <script type="text/javascript" src="scripts/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="scripts/jquery-ui.js"></script>    
+    <script type="text/javascript"> 
+		var i = 0;
+		var j = 0;
+		var tr = 0;
+		var td = 0;
+		
+		//// grid size
+		var size = 0;
+		
+		//// array for images
+		var gem = new Array(5);
+		gem[0] = "img/g1.png";
+		gem[1] = "img/g2.png";
+		gem[2] = "img/g3.png";
+		gem[3] = "img/g4.png";
+		gem[4] = "img/g5.png";		
+		
+		//// gen random num for img
+		var rand = 0;
+		
+		var gem1, gem2, tmp;
+		
+		//// get gems value
+		var ggv = 0;	
+		
+		//// check combo
+		var rowCombo = 0;
+		var colCombo = 0;
+        
+        //// store score 
+        var score = 0;            
+		
+		//// jquery codes start here
+		$(function() {		
+			var gemsArray = create2DArray(6,6);;
+						
+			//// default size 6x6
+			gridSize(6);
+            
+			$("#6x6").click(function() {
+				$("#realBoard").children().remove();
+			    size = parseInt( ($("#6x6").attr("value")) );
+			    gemsArray = create2DArray(size,size);			    
+			    gridSize(size);
+                score = 0;                
+			    dnd();
+                timer();			    
+			});
+			
+			$("#8x8").click(function() {
+				$("#realBoard").children().remove();
+			    size = parseInt( ($("#8x8").attr("value")) );	
+			    gemsArray = create2DArray(size,size);    
+			    gridSize(size);
+                score = 0; 
+			    dnd();
+                timer();
+				
+			});
+			
+			//// create grid size
+			function gridSize(size){
+				for(tr=0; tr<size; tr++){
+					$("#realBoard").append("<tr id='row" + tr + "'></tr>");
+					for(td=0; td<size; td++){
+						rand = Math.floor( (Math.random() * 5) + 0 );
+						var id = tr+""+td;
+						$("#row" + tr).append("<td class='drop' id='" + parseInt(id) + "'><div class='drag'><img src="+ gem[rand] +" /></div></td>");
+					}
+				}
+			}
+			
+			function dnd(){
+				//// DnD                
+				$( ".drag" ).draggable({
+					drag: function(){
+						gem1 = $(this);		// gem1 is div                        				
+					}
+					
+				});
+				
+				$( ".drop" ).droppable({
+					drop: function(){
+						gem2 = $(this).children(); // gem2 is div
+                        tmp2 = $(this);
+						gem2.insertAfter(gem1);					
+						gem1.detach().css({top: 0,left: 0}).appendTo(this);	
+						//// check after each dnd
+                        tmp = $(this);	
+                        checkCombo(gem1,gem2,tmp);                        
+					}
+				});               					
+			}
+			dnd(); 
+			//// check 1 check at the start of game
+            //dropGems();
+            //checkCombo();            	
+			
+			function getAllGemsIn2DArr(){
+				i=0; j=0;
+				$( "#realBoard td" ).each(function(){					
+					ggv = parseInt(gem.indexOf( $(this).find("img").attr("src") ));
+					//console.log(ggv);
+					gemsArray[i][j]=ggv;  // make a 2d array for check the combo later	
+					j++;
+					if(j>=td){
+						i++;
+						j=0;
+					}
+				});
+			}
+			//console.log(gemsArray);	
+            
+            function checkCombo(gem1,gem2,tmp){                
+                getAllGemsIn2DArr();
+                var rowGemColour = 0;	
+				var col = 0;				
+				var rowIdx = [];
+				var rowObj = [];	
+                var colGemColour = 0;	
+				var col = 0;
+				var colIdx = [];
+				var colObj = [];
+				for(col = 0; col < tr; col++){					
+					rowCombo = 0;
+                    colCombo = 0; 					
+					var rowIn = 1;
+                    var colIn = 1;
+					rowGemColour = -1; //Reserve -1 for the empty state. If we make it a normal gem type, then only 2 are needed to match for the start.
+					for(i = 0; i < td; i++){                        
+						if(gemsArray[col][i] == rowGemColour){							
+							rowCombo++;														
+							rowIdx[rowIn] = parseInt(col+""+i);
+							rowObj[rowIn] = $( "#"+rowIdx[rowIn] ).children();
+							rowIn++;
+						}
+                        if(gemsArray[i][col] == colGemColour){							
+							colCombo++;														
+							colIdx[colIn] = parseInt(i+""+col);
+							colObj[colIn] = $( "#"+colIdx[colIn] ).children();							
+							colIn++;
+						}                        
+						if(gemsArray[col][i] != rowGemColour || i == td-1){ //no combo or last column
+							if(rowCombo >= 3){                               
+                                score = score + rowCombo;
+								rowIdx[0] = rowIdx[1]-1;
+                                //console.log(rowIdx[1]-1);	
+								//console.log(rowIdx);	
+								rowObj[0] = $( "#"+rowIdx[0] ).children();
+								//// remove the combo
+                                clearCombo(rowObj);                                 
+							}
+                            
+                            //// the following 5 lines for swap back if no match
+                            //console.log("dd");                           
+                            //gem1.insertAfter(gem2);
+                            //gem2.detach().css({top: 0,left: 0}).appendTo(tmp);
+                            //gem1=$();
+                            //gem2=$();
+                            //tmp=$();
+                            
+							rowIdx = [];
+							rowIn = 1;
+							rowGemColour = gemsArray[col][i];
+							rowCombo = 1;
+						}
+                        if(gemsArray[i][col] != colGemColour || i == tr-1){ //no combo or last column
+							if(colCombo >= 3){                               
+                                score = score + colCombo;
+								colIdx[0] = colIdx[1]-10;								
+								colObj[0] = $( "#"+colIdx[0] ).children();
+								//// remove the combo
+                                clearCombo(colObj);
+							}
+                            
+                            //// the following 5 lines for swap back if no match
+                            //console.log("dd");                           
+                            //gem1.insertAfter(gem2);
+                            //gem2.detach().css({top: 0,left: 0}).appendTo(tmp);
+                            //gem1=$();
+                            //gem2=$();
+                            //tmp=$();  
+                                        
+							colIdx = [];
+							colIn = 1;
+							colGemColour = gemsArray[i][col];
+							colCombo = 1;
+						}
+					}
+                    $("#scores").html(score);
+				}
+                dropGems();
+            }             
+            
+            function clearCombo(objArr){
+                $.each(objArr,function( index, value ) {
+                    value.fadeOut(function() { value.detach(); });                    
+                });
+            }
+			
+			function dropGems(){
+                var emptyCell = 0; // record empty space id in grid
+                //var countEmp = 0; 
+                var pos = 0; // recode empty cell of a column
+                var tgCell = 0; // target cell to be drop down into it
+                var needToMove;
+				for(i=td-1; i>=0; i--){
+                    //// this loop check all empty cells in each column first
+					for(j=tr-1; j>=0; j--){
+						id = parseInt(j+""+i);						
+						//console.log($("#"+id).children().size()==0);
+						//// count Empty
+						if($("#"+id).children().size()==0){                            
+							emptyCell = id;
+							pos = j; 
+                            //console.log("col "+i+" cell "+j+" has "+emptyCell);                            
+							//countEmp++;                            
+						}
+                        if( $("#"+(emptyCell-10)).children().size() != 0 ){
+                            //console.log((emptyCell-10) + "need to move");
+                            needToMove = $("#"+(emptyCell-10)).children();
+                            //console.log(needToMove);
+                            //console.log($("#"+emptyCell));
+                            while( $("#"+emptyCell).children().size() == 0 && emptyCell<=parseInt(tr+""+td) ){                            
+                                needToMove.detach().appendTo($("#"+emptyCell));
+                                emptyCell = emptyCell+10;
+                            }
+                        }
+					}       
+                    
+					//countEmp = 0;
+					emptyCell = 0;
+					pos = 0;
+				}                          
+				reGenGems(); //regenerate gems after clean combo and drop down                                 
+                dnd();
+			}
+			
+			function reGenGems(){
+				for(i=td-1; i>=0; i--){
+					for(j=tr-1; j>=0; j--){
+						id = parseInt(j+""+i);	
+						if($("#"+id).children().size()==0){
+							emptyCell = id;
+							//console.log(emptyCell);
+							rand = Math.floor( (Math.random() * 5) + 0 );
+							$("#"+emptyCell).append("<div class='drag'><img src="+ gem[rand] +" /></div>");
+						}	
+					}
+				}
+			}
+            
+            //// check combo in each second(for after drop)
+            setInterval(function(){ 
+                gem1=$();
+                gem2=$();
+                tmp=$();
+                checkCombo(gem1,gem2,tmp);  
+            }, 1000);
+            
+            //// timer
+            var time = 0;
+            var interval;
+            function timer(){
+                clearInterval(interval);
+                time = $("#time").val();
+                interval = setInterval(function(){ 
+                    $("#count").html(time);     
+                    //console.log(interval);           
+                    if (time==0){
+                        clearInterval(interval);
+                        alert("game over!!\n your final score is " + score + "\n please press F5 refresh the page to play again");                        
+                    }else{
+                        time = time - 1;
+                    }
+                }, 1000);
+                
+            }                
+        });        
+		
+        function create2DArray(rows,columns) {
+            var x = new Array(rows);
+            for (var i = 0; i < rows; i++){
+                x[i] = new Array(columns);
+            }
+        return x;
+        }
+		
+	</script>	
+	</head>
+	
+	<body>
+		<h2>question 2: Gemz</h2>
+		<h3>Notes:</h3>
+        <ul>
+            <li>this game is not finish yet, it still has many bugs</li>
+            <li>please read the README.txt before play</li>
+            <li>the source code is available in my github: </li>
+        </ul>
+        select time in seconds:
+        <select id="time">
+            <option value="70">70</option>
+            <option value="60">60</option>
+            <option value="50">50</option>
+            <option value="40">40</option>
+            <option value="30">30</option>
+        </select>, then either click the below buttons to start
+		<div id="button">             
+			<button id="6x6" value="6">start 6x6 new game</button>
+			<button id="8x8" value="8">start 8x8 new game</button>	            
+		</div>
+        
+        <div id="score" >score: <span id="scores"></span></div>
+        <div id="timer">time: <span id="count"></span></div>       
+        
+		<div id="boardArea">
+			<table id="realBoard"></table>
+		</div>
+	</body>
+</html>
